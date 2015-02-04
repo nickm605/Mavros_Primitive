@@ -12,6 +12,6 @@ If this command fails to find our node you can navigate to the directory```catki
 
 The ```mavros_primitive_node``` should now be running.
 
-Press '''w''' to send takeoff request.
+Press ```w``` to send takeoff request.
 
-Press '''s''' to send land request.
+Press ```s``` to send land request.
