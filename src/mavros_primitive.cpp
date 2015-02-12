@@ -29,14 +29,21 @@ void MavrosPrimitive::handleKeyboardInput(int character)
 
 void MavrosPrimitive::takeOff()
 {
-    //build takeoff command
+    //build takeoff command ,,
     //(NOTE) just using empty to demonstrate functionality
-    mavros::CommandTOL srv;
+    mavros::CommandTOL srv;    
+    srv.request.min_pitch = 0.1f;
+    srv.request.yaw = 0.1f;
+    srv.request.latitude = 0.1f;
+    srv.request.longitude= 0.1f;
+    srv.request.altitude = 0.1f;
 
     //send
     if(takeoff_client_.call(srv))
     {
+        ROS_ERROR("connected takeoff");
         //check response of the service
+        //NOTE: Pixhawk may not be successful on start as you need to arm correctly before you takeoff?
         if(srv.response.success)
         {
             ROS_ERROR("Sent Takeoff %d", srv.response.result);
@@ -54,10 +61,17 @@ void MavrosPrimitive::land()
     //build land command
     //(NOTE) just using empty to demonstrate functionality
     mavros::CommandTOL srv;
+    srv.request.min_pitch = 0.1f;
+    srv.request.yaw = 0.1f;
+    srv.request.latitude = 0.1f;
+    srv.request.longitude= 0.1f;
+    srv.request.altitude = 0.1f;
+
 
     //send
     if(land_client_.call(srv))
     {
+        ROS_ERROR("connected land");
         if(srv.response.success)
         {
             ROS_ERROR("Sent Land %d", srv.response.result);
