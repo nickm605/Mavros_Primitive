@@ -4,6 +4,7 @@ ROS package to demonstrate primitive functionality of ros services with an autop
 
 How To Run
 ==================
+DON'T RUN ON ACTIVE VEHICLE (I use dummy data)
 
 Open a terminal and run ```roscore```
 
