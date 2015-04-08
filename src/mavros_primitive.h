@@ -5,8 +5,11 @@
 #include <termios.h>
 #include <stdio.h>
 #include <mavros/CommandTOL.h>
-
-
+#include <mavros/Waypoint.h>
+#include <mavros/WaypointPull.h>
+#include <mavros/WaypointPush.h>
+#include <mavros/WaypointList.h>
+#include "std_msgs/String.h"
 
 /**
  * Primitive demo of publishing to pixhawk autopilot using mavros package, not for actual flight function yet
@@ -26,15 +29,19 @@ public:
 
     void handleKeyboardInput(int character);
     int getch();
-
-private:
-
+    static void chatterCallback(const mavros::WaypointList::ConstPtr& msg);
     void land();
     void takeOff();
+    void get_waypoints();
+    void load_waypoints();
+
+private:
 
     ros::NodeHandle nh_;
     ros::ServiceClient takeoff_client_;
     ros::ServiceClient land_client_;
+    ros::ServiceClient waypoint_pull_client_;
+    ros::ServiceClient waypoint_push_client_;
 };
 
 #endif //MAVROS_PRIMITIVE
