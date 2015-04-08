@@ -14,7 +14,7 @@ MavrosPrimitive::~MavrosPrimitive()
 {
 
 }
-
+/*
 void MavrosPrimitive::handleKeyboardInput(int character)
 {
     switch(character)
@@ -37,7 +37,8 @@ void MavrosPrimitive::handleKeyboardInput(int character)
     break;
     }
 }
-
+*/
+/*
 void MavrosPrimitive::takeOff()
 {
     //build takeoff command ,,
@@ -52,7 +53,7 @@ void MavrosPrimitive::takeOff()
     //send
     if(takeoff_client_.call(srv))
     {
-        ROS_ERROR("connected takeoff");
+        ROS_INFO("connected takeoff");
         //check response of the service
         //NOTE: Pixhawk may not be successful on start as you need to arm correctly before you takeoff?
         if(srv.response.success)
@@ -66,7 +67,8 @@ void MavrosPrimitive::takeOff()
     }
 
 }
-
+*/
+/*
 void MavrosPrimitive::land()
 {
     //build land command
@@ -94,7 +96,8 @@ void MavrosPrimitive::land()
     }
 
 }
-
+*/
+/*
 void MavrosPrimitive::get_waypoints()
 {
     // read waypoints from Pixhawk
@@ -114,33 +117,170 @@ void MavrosPrimitive::get_waypoints()
     }
 
 }
-
+*/
 void MavrosPrimitive::load_waypoints()
 {
-    // read waypoints from Pixhawk
     mavros::WaypointPush srv;
 
-    mavros::Waypoint wp;
-    wp.x_lat = wpl->waypoints[0].x_lat + 0.0001;
-    wp.y_long = wpl->waypoints[0].y_long;
-    wp.z_alt = 15.0;
-    wpl->waypoints.push_back(wp);
-    srv.request.waypoints = wpl->waypoints;
-    //send
-    if(waypoint_push_client_.call(srv))
-    {
-        ROS_INFO("Pushing waypoints");
-        if(srv.response.success)
-        {
-            ROS_INFO("Number of waypoints transferred: %d", srv.response.wp_transfered);
-        }
-    }
-    else
-    {
-        ROS_ERROR("Failed to push waypoints");
+    switch (wpl->waypoints.size()) {
+        case 3: //move east
+            mavros::Waypoint wp;
+            wp.x_lat = wpl->waypoints[2].x_lat;
+            wp.y_long = wpl->waypoints[2].y_long + 0.0001;
+            wp.z_alt = 15.0;
+            wp.comand = 16;
+            wpl->waypoints.push_back(wp);
+            srv.request.waypoints = wpl->waypoints;
+            //send
+            if(waypoint_push_client_.call(srv))
+            {
+                ROS_INFO("Pushing east waypoint");
+                if(srv.response.success)
+                {
+                    ROS_INFO("Number of waypoints transferred: %d", srv.response.wp_transfered);
+                }
+            }
+            else
+            {
+                ROS_ERROR("Failed to push waypoints");
+            }
+        break;
+        case 4: //move south
+            mavros::Waypoint wp;
+            wp.x_lat = wpl->waypoints[2].x_lat - 0.0001;
+            wp.y_long = wpl->waypoints[2].y_long + 0.0001;
+            wp.z_alt = 15.0;
+            wp.comand = 16;
+            wpl->waypoints.push_back(wp);
+            srv.request.waypoints = wpl->waypoints;
+            //send
+            if(waypoint_push_client_.call(srv))
+            {
+                ROS_INFO("Pushing south waypoint");
+                if(srv.response.success)
+                {
+                    ROS_INFO("Number of waypoints transferred: %d", srv.response.wp_transfered);
+                }
+            }
+            else
+            {
+                ROS_ERROR("Failed to push waypoints");
+            }
+        break;
+        case 5: //move west
+            mavros::Waypoint wp;
+            wp.x_lat = wpl->waypoints[2].x_lat - 0.0001;
+            wp.y_long = wpl->waypoints[2].y_long;
+            wp.z_alt = 15.0;
+            wp.comand = 16;
+            wpl->waypoints.push_back(wp);
+            srv.request.waypoints = wpl->waypoints;
+            //send
+            if(waypoint_push_client_.call(srv))
+            {
+                ROS_INFO("Pushing west waypoint");
+                if(srv.response.success)
+                {
+                    ROS_INFO("Number of waypoints transferred: %d", srv.response.wp_transfered);
+                }
+            }
+            else
+            {
+                ROS_ERROR("Failed to push waypoints");
+            }
+        break;
+        case 6: //move north
+            mavros::Waypoint wp;
+            wp.x_lat = wpl->waypoints[2].x_lat;
+            wp.y_long = wpl->waypoints[2].y_long;
+            wp.z_alt = 15.0;
+            wp.comand = 16;
+            wpl->waypoints.push_back(wp);
+            srv.request.waypoints = wpl->waypoints;
+            //send
+            if(waypoint_push_client_.call(srv))
+            {
+                ROS_INFO("Pushing west waypoint");
+                if(srv.response.success)
+                {
+                    ROS_INFO("Number of waypoints transferred: %d", srv.response.wp_transfered);
+                }
+            }
+            else
+            {
+                ROS_ERROR("Failed to push waypoints");
+            }
+        break;
+        case 7: //land
+            mavros::Waypoint wp;
+            wp.x_lat = wpl->waypoints[6].x_lat;
+            wp.y_long = wpl->waypoints[6].y_long;
+            wp.z_alt = 0.0;
+            wp.comand = 21;
+            wpl->waypoints.push_back(wp);
+            srv.request.waypoints = wpl->waypoints;
+            //send
+            if(waypoint_push_client_.call(srv))
+            {
+                ROS_INFO("Pushing land waypoint");
+                if(srv.response.success)
+                {
+                    ROS_INFO("Number of waypoints transferred: %d", srv.response.wp_transfered);
+                }
+            }
+            else
+            {
+                ROS_ERROR("Failed to push waypoints");
+            }
+        break;
+        case 8: //takeoff
+            mavros_primitive::Waypoint wp;
+            wp.x_lat = wpl->waypoints[6].x_lat;
+            wp.y_long = wpl->waypoints[6].y_long;
+            wp.z_alt = 15.0;
+            wp.comand = 22;
+            wpl->waypoints.push_back(wp);
+            srv.request.waypoints = wpl->waypoints;
+            //send
+            if(waypoint_push_client_.call(srv))
+            {
+                ROS_INFO("Pushing takeoff waypoint");
+                if(srv.response.success)
+                {
+                    ROS_INFO("Number of waypoints transferred: %d", srv.response.wp_transfered);
+                }
+            }
+            else
+            {
+                ROS_ERROR("Failed to push waypoints");
+            }
+        break;
+        case 9: //rtl
+            mavros::Waypoint wp;
+            wp.comand = 20;
+            wpl->waypoints.push_back(wp);
+            srv.request.waypoints = wpl->waypoints;
+            //send
+            if(waypoint_push_client_.call(srv))
+            {
+                ROS_INFO("Pushing rtl waypoint");
+                if(srv.response.success)
+                {
+                    ROS_INFO("Number of waypoints transferred: %d", srv.response.wp_transfered);
+                }
+            }
+            else
+            {
+                ROS_ERROR("Failed to push waypoints");
+            }
+        break;
+        default:
+            ROS_INFO("Total waypoints: %d", wpl->waypoints.size());
+        break;
     }
 }
 
+/*
 //read input with a non-blocking getchar from http://answers.ros.org/question/63491/keyboard-key-pressed/
 //linux specific?
 int MavrosPrimitive::getch()
@@ -156,16 +296,15 @@ int MavrosPrimitive::getch()
     tcsetattr( STDIN_FILENO, TCSANOW, &oldt);  // restore old settings
     return c;
 }
+*/
 
 void MavrosPrimitive::chatterCallback(const mavros::WaypointList::ConstPtr& msg) {
 
-    ROS_INFO("HERE");
-    
     ROS_INFO("Received %d waypoints", msg->waypoints.size());
 
     for(int i = 0; i < msg->waypoints.size(); i++) {
 
-        ROS_INFO("Waypoint (%d) is current: %d x_lat: %f", i, msg->waypoints[i].is_current, msg->waypoints[i].x_lat);
+        ROS_INFO("Waypoint (%d) frame: %d command: %d is current: %d x_lat: %f", i, msg->waypoints[i].frame, msg->waypoints[i].command, msg->waypoints[i].is_current, msg->waypoints[i].x_lat);
     }
 
     wpl->waypoints = msg->waypoints;
@@ -174,8 +313,8 @@ void MavrosPrimitive::chatterCallback(const mavros::WaypointList::ConstPtr& msg)
 
     mp.load_waypoints();
 
-    ROS_INFO("send land");
-    mp.land();
+    //ROS_INFO("send land");
+    //mp.land();
 }
 
 int main(int argc, char** argv)
@@ -191,7 +330,7 @@ int main(int argc, char** argv)
    
 
     //run obstacle avoidance with ros
-/*
+    /*
     
     ROS_INFO("Mavros Primitive starting...");
 
@@ -199,6 +338,6 @@ int main(int argc, char** argv)
     {
         mp.handleKeyboardInput(mp.getch());
     }
-*/
+    */
     return 0;
 }
