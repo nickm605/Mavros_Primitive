@@ -2,7 +2,6 @@
 
 mavros::WaypointListPtr wpl = boost::make_shared<mavros::WaypointList>();
 gps current_gps;
-current_gps.latitude = -1;
 
 MavrosPrimitive::MavrosPrimitive()
 {    
@@ -10,6 +9,7 @@ MavrosPrimitive::MavrosPrimitive()
     //land_client_ = nh_.serviceClient<mavros::CommandTOL>("/mavros/cmd/land");
     waypoint_pull_client_ = nh_.serviceClient<mavros::WaypointPull>("/mavros/mission/pull");
     waypoint_push_client_ = nh_.serviceClient<mavros::WaypointPush>("/mavros/mission/push");
+    current_gps.latitude = -1;
 }
 
 MavrosPrimitive::~MavrosPrimitive()
@@ -21,9 +21,9 @@ int main(int argc, char** argv)
 {
     ros::init(argc, argv, "mavros_primitive_node");
 
-    //ros::NodeHandle n;
+    ros::NodeHandle n;
 
-    ros::Subscriber sub = nh_.subscribe("/mavros/mission/waypoints", 1000, MavrosPrimitive::waypointListCallback);
+    ros::Subscriber sub = n.subscribe("/mavros/mission/waypoints", 1000, MavrosPrimitive::waypointListCallback);
 
     ros::spinOnce();
 
@@ -37,7 +37,7 @@ int main(int argc, char** argv)
 
     // Uncomment this
     /*
-    ros::Subscriber sub2 = nh_.subscribe("/pose_stamped", 1000, MavrosPrimitive::arTagCallback);
+    ros::Subscriber sub2 = n.subscribe("/pose_stamped", 1000, MavrosPrimitive::arTagCallback);
 
     ros::spin();
     */
@@ -77,7 +77,7 @@ void MavrosPrimitive::arTagCallback(const geometry_msgs::PoseStamped::ConstPtr& 
     
     // When do we stop? How do we wait?
 
-    ROS_INFO("Received x: %f y: %f", msg->pose.point.x, msg->pose.point.y);
+    ROS_INFO("Received x: %f y: %f", msg->pose.position.x, msg->pose.position.y);
 
     if (wpl->waypoints.size() < 3) {
 
@@ -87,7 +87,7 @@ void MavrosPrimitive::arTagCallback(const geometry_msgs::PoseStamped::ConstPtr& 
 
     MavrosPrimitive mp;
 
-    mp.load_ar_tag_waypoint(msg->pose.point.x, msg->pose.point.y);
+    mp.load_ar_tag_waypoint(msg->pose.position.x, msg->pose.position.y);
 }
 
 void MavrosPrimitive::get_waypoints()
@@ -127,7 +127,7 @@ void MavrosPrimitive::load_ar_tag_waypoint(float x, float y)
     wp.x_lat = new_gps.latitude;
     wp.y_long = new_gps.longitude;
     wp.z_alt = 15.0;
-    wp.comand = 16;
+    wp.command = 16;
     wpl->waypoints.push_back(wp);
     srv.request.waypoints = wpl->waypoints;
     //send
@@ -181,7 +181,7 @@ void MavrosPrimitive::load_waypoints()
     wp_east.x_lat = wpl->waypoints[2].x_lat;
     wp_east.y_long = wpl->waypoints[2].y_long + 0.0001;
     wp_east.z_alt = 15.0;
-    wp_east.comand = 16;
+    wp_east.command = 16;
     wpl->waypoints.push_back(wp_east);
 
     //move south
@@ -189,7 +189,7 @@ void MavrosPrimitive::load_waypoints()
     wp_south.x_lat = wpl->waypoints[2].x_lat - 0.0001;
     wp_south.y_long = wpl->waypoints[2].y_long + 0.0001;
     wp_south.z_alt = 15.0;
-    wp_south.comand = 16;
+    wp_south.command = 16;
     wpl->waypoints.push_back(wp_south);
 
     //move west
@@ -197,7 +197,7 @@ void MavrosPrimitive::load_waypoints()
     wp_west.x_lat = wpl->waypoints[2].x_lat - 0.0001;
     wp_west.y_long = wpl->waypoints[2].y_long;
     wp_west.z_alt = 15.0;
-    wp_west.comand = 16;
+    wp_west.command = 16;
     wpl->waypoints.push_back(wp_west);
 
     //move north
@@ -205,7 +205,7 @@ void MavrosPrimitive::load_waypoints()
     wp_north.x_lat = wpl->waypoints[2].x_lat;
     wp_north.y_long = wpl->waypoints[2].y_long;
     wp_north.z_alt = 15.0;
-    wp_north.comand = 16;
+    wp_north.command = 16;
     wpl->waypoints.push_back(wp_north);
 
     //land
@@ -213,7 +213,7 @@ void MavrosPrimitive::load_waypoints()
     wp_land.x_lat = wpl->waypoints[6].x_lat;
     wp_land.y_long = wpl->waypoints[6].y_long;
     wp_land.z_alt = 0.0;
-    wp_land.comand = 21;
+    wp_land.command = 21;
     wpl->waypoints.push_back(wp_land);
 
     //takeoff
@@ -221,12 +221,12 @@ void MavrosPrimitive::load_waypoints()
     wp_takeoff.x_lat = wpl->waypoints[6].x_lat;
     wp_takeoff.y_long = wpl->waypoints[6].y_long;
     wp_takeoff.z_alt = 15.0;
-    wp_takeoff.comand = 22;
+    wp_takeoff.command = 22;
     wpl->waypoints.push_back(wp_takeoff);
 
     //rtl
     mavros::Waypoint wp_rtl;
-    wp_rtl.comand = 20;
+    wp_rtl.command = 20;
     wpl->waypoints.push_back(wp_rtl);
 
     srv.request.waypoints = wpl->waypoints;

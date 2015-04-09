@@ -36,11 +36,12 @@ public:
     //void handleKeyboardInput(int character);
     //int getch();
     static void waypointListCallback(const mavros::WaypointList::ConstPtr& msg);
-    static void arTagCallback(const mavros::WaypointList::ConstPtr& msg);
+    static void arTagCallback(const  geometry_msgs::PoseStamped::ConstPtr& msg);
     //void land();
     //void takeOff();
     void get_waypoints();
     void load_waypoints();
+    void load_ar_tag_waypoint(float x, float y);
     gps offsetToGPSWaypoint(double x, double y, gps current_gps, double yaw);
 
 private:
