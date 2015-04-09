@@ -127,6 +127,7 @@ void MavrosPrimitive::load_ar_tag_waypoint(float x, float y)
     wp.y_long = new_gps.longitude;
     wp.z_alt = 15.0;
     wp.command = 16;
+    wp.frame = 3;
     wpl->waypoints.push_back(wp);
     srv.request.waypoints = wpl->waypoints;
     //send
@@ -181,6 +182,7 @@ void MavrosPrimitive::load_waypoints()
     wp_east.y_long = wpl->waypoints[2].y_long + 0.0001;
     wp_east.z_alt = 15.0;
     wp_east.command = 16;
+    wp_east.frame = 3;
     wpl->waypoints.push_back(wp_east);
 
     //move south
@@ -189,6 +191,7 @@ void MavrosPrimitive::load_waypoints()
     wp_south.y_long = wpl->waypoints[2].y_long + 0.0001;
     wp_south.z_alt = 15.0;
     wp_south.command = 16;
+    wp_south.frame = 3;
     wpl->waypoints.push_back(wp_south);
 
     //move west
@@ -197,6 +200,7 @@ void MavrosPrimitive::load_waypoints()
     wp_west.y_long = wpl->waypoints[2].y_long;
     wp_west.z_alt = 15.0;
     wp_west.command = 16;
+    wp_west.frame = 3;
     wpl->waypoints.push_back(wp_west);
 
     //move north
@@ -205,6 +209,7 @@ void MavrosPrimitive::load_waypoints()
     wp_north.y_long = wpl->waypoints[2].y_long;
     wp_north.z_alt = 15.0;
     wp_north.command = 16;
+    wp_north.frame = 3;
     wpl->waypoints.push_back(wp_north);
 
     //land
@@ -213,6 +218,7 @@ void MavrosPrimitive::load_waypoints()
     wp_land.y_long = wpl->waypoints[6].y_long;
     wp_land.z_alt = 0.0;
     wp_land.command = 21;
+    wp_land.frame = 3;
     wpl->waypoints.push_back(wp_land);
 
     //takeoff
@@ -221,11 +227,13 @@ void MavrosPrimitive::load_waypoints()
     wp_takeoff.y_long = wpl->waypoints[6].y_long;
     wp_takeoff.z_alt = 15.0;
     wp_takeoff.command = 22;
+    wp_takeoff.frame = 3;
     wpl->waypoints.push_back(wp_takeoff);
 
     //rtl
     mavros::Waypoint wp_rtl;
     wp_rtl.command = 20;
+    wp_rtl.frame = 3;
     wpl->waypoints.push_back(wp_rtl);
 
     srv.request.waypoints = wpl->waypoints;
