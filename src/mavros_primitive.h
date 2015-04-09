@@ -9,7 +9,13 @@
 #include <mavros/WaypointPull.h>
 #include <mavros/WaypointPush.h>
 #include <mavros/WaypointList.h>
+#include <geometry_msgs/PoseStamped.h>
 #include "std_msgs/String.h"
+
+struct gps {
+    double latitude;
+    double longitude;
+};
 
 /**
  * Primitive demo of publishing to pixhawk autopilot using mavros package, not for actual flight function yet
@@ -27,19 +33,20 @@ public:
     MavrosPrimitive();
     ~MavrosPrimitive();
 
-    void handleKeyboardInput(int character);
-    int getch();
-    static void chatterCallback(const mavros::WaypointList::ConstPtr& msg);
-    void land();
-    void takeOff();
+    //void handleKeyboardInput(int character);
+    //int getch();
+    static void waypointListCallback(const mavros::WaypointList::ConstPtr& msg);
+    static void arTagCallback(const mavros::WaypointList::ConstPtr& msg);
+    //void land();
+    //void takeOff();
     void get_waypoints();
     void load_waypoints();
+    gps offsetToGPSWaypoint(double x, double y, gps current_gps, double yaw);
 
 private:
-
     ros::NodeHandle nh_;
-    ros::ServiceClient takeoff_client_;
-    ros::ServiceClient land_client_;
+    //ros::ServiceClient takeoff_client_;
+    //ros::ServiceClient land_client_;
     ros::ServiceClient waypoint_pull_client_;
     ros::ServiceClient waypoint_push_client_;
 };
