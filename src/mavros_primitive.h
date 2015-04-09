@@ -11,6 +11,10 @@
 #include <mavros/WaypointList.h>
 #include <geometry_msgs/PoseStamped.h>
 #include "std_msgs/String.h"
+#include <pthread.h>
+#include <iostream>
+#include <fstream>
+#include <string>
 
 struct gps {
     double latitude;
@@ -33,6 +37,7 @@ public:
     MavrosPrimitive();
     ~MavrosPrimitive();
 
+
     //void handleKeyboardInput(int character);
     //int getch();
     static void waypointListCallback(const mavros::WaypointList::ConstPtr& msg);
@@ -44,12 +49,16 @@ public:
     void load_ar_tag_waypoint(float x, float y);
     gps offsetToGPSWaypoint(double x, double y, gps current_gps, double yaw);
 
+    static void *runInSeparateThread(void*);
+
 private:
     ros::NodeHandle nh_;
     //ros::ServiceClient takeoff_client_;
     //ros::ServiceClient land_client_;
     ros::ServiceClient waypoint_pull_client_;
     ros::ServiceClient waypoint_push_client_;
+
+    
 };
 
 #endif //MAVROS_PRIMITIVE

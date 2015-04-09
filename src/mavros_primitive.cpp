@@ -3,6 +3,8 @@
 mavros::WaypointListPtr wpl = boost::make_shared<mavros::WaypointList>();
 gps current_gps;
 
+static FILE* myfile;
+
 MavrosPrimitive::MavrosPrimitive()
 {    
     //takeoff_client_ = nh_.serviceClient<mavros::CommandTOL>("/mavros/cmd/takeoff");
@@ -10,6 +12,8 @@ MavrosPrimitive::MavrosPrimitive()
     waypoint_pull_client_ = nh_.serviceClient<mavros::WaypointPull>("/mavros/mission/pull");
     waypoint_push_client_ = nh_.serviceClient<mavros::WaypointPush>("/mavros/mission/push");
     current_gps.latitude = -1;
+
+    myfile = fopen("example.txt", "wa");
 }
 
 MavrosPrimitive::~MavrosPrimitive()
@@ -25,7 +29,11 @@ int main(int argc, char** argv)
 
     ros::Subscriber sub = n.subscribe("/mavros/mission/waypoints", 1000, MavrosPrimitive::waypointListCallback);
 
-    ros::Subscriber sub2 = n.subscribe("/pose_stamped", 1000, MavrosPrimitive::arTagCallback);
+    //ros::Subscriber sub2 = n.subscribe("/pose_stamped", 1000, MavrosPrimitive::arTagCallback);
+
+    //spin separate thread
+    pthread_t thread;
+    pthread_create(&thread, NULL, &MavrosPrimitive::runInSeparateThread, NULL);
 
     ros::spin();
 
@@ -43,9 +51,25 @@ int main(int argc, char** argv)
     */
 }
 
+void *MavrosPrimitive::runInSeparateThread(void*) {
+
+    MavrosPrimitive mp;
+    mp.load_waypoints();
+
+    while(true) {
+
+        sleep(1);
+        mp.get_waypoints();
+    }
+}
+
 void MavrosPrimitive::waypointListCallback(const mavros::WaypointList::ConstPtr& msg) {
 
-    ROS_INFO("Received %d waypoints", msg->waypoints.size());
+    //std::ofstream myfile;
+    //myfile.open("example.txt", std::ios_base::app);
+    //myfile << msg->waypoints.size() << " waypoints\n";
+    fprintf(myfile, "\n\n%d waypoints\n", msg->waypoints.size());
+    //ROS_INFO("Received %d waypoints", msg->waypoints.size());
 
     bool load_when_done = false;
     if(wpl->waypoints.size() == 0) {
@@ -55,7 +79,16 @@ void MavrosPrimitive::waypointListCallback(const mavros::WaypointList::ConstPtr&
 
     for(int i = 0; i < msg->waypoints.size(); i++) {
 
-        ROS_INFO("Waypoint (%d) frame: %d command: %d is current: %d x_lat: %f", i, msg->waypoints[i].frame, msg->waypoints[i].command, msg->waypoints[i].is_current, msg->waypoints[i].x_lat);
+        fprintf(myfile, "Waypoint (%d) frame: %d command: %d is current: %d lat: %f long: %f\n", i, msg->waypoints[i].frame, msg->waypoints[i].command, msg->waypoints[i].is_current, msg->waypoints[i].x_lat,  msg->waypoints[i].y_long);
+
+/*
+        myfile << "Waypoint " << i << "  frame: " << std::string::to_string(msg->waypoints[i].frame);
+        myfile << "  command: " << std::string::to_string(msg->waypoints[i].command);
+        myfile << "  is_current: " << std::string::to_string(msg->waypoints[i].is_current);
+        myfile << "  lat: " << std::string::to_string(msg->waypoints[i].x_lat);
+        myfile << "  long: " << std::string::to_string(msg->waypoints[i].y_long) << "\n";
+*/
+        //ROS_INFO("Waypoint (%d) frame: %d command: %d is current: %d x_lat: %f", i, msg->waypoints[i].frame, msg->waypoints[i].command, msg->waypoints[i].is_current, msg->waypoints[i].x_lat);
 
         if (msg->waypoints[i].is_current) {
             current_gps.latitude = msg->waypoints[i].x_lat;
@@ -99,7 +132,7 @@ void MavrosPrimitive::get_waypoints()
         ROS_INFO("Getting waypoints");
         if(srv.response.success)
         {
-            ROS_INFO("Number of waypoints received: %d", srv.response.wp_received);
+            //ROS_INFO("Number of waypoints received: %d", srv.response.wp_received);
         }
     }
     else
