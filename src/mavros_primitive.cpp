@@ -25,22 +25,9 @@ int main(int argc, char** argv)
 
     ros::Subscriber sub = n.subscribe("/mavros/mission/waypoints", 1000, MavrosPrimitive::waypointListCallback);
 
-    ros::spinOnce();
-
-    MavrosPrimitive mp;
-
-    mp.get_waypoints();
-
-    // Comment this out
-    mp.load_waypoints();
-    ros::spinOnce();
-
-    // Uncomment this
-    /*
     ros::Subscriber sub2 = n.subscribe("/pose_stamped", 1000, MavrosPrimitive::arTagCallback);
 
     ros::spin();
-    */
 
     return 0;
 
@@ -60,6 +47,12 @@ void MavrosPrimitive::waypointListCallback(const mavros::WaypointList::ConstPtr&
 
     ROS_INFO("Received %d waypoints", msg->waypoints.size());
 
+    bool load_when_done = false;
+    if(wpl->waypoints.size() == 0) {
+
+        load_when_done = true;
+    }
+
     for(int i = 0; i < msg->waypoints.size(); i++) {
 
         ROS_INFO("Waypoint (%d) frame: %d command: %d is current: %d x_lat: %f", i, msg->waypoints[i].frame, msg->waypoints[i].command, msg->waypoints[i].is_current, msg->waypoints[i].x_lat);
@@ -71,6 +64,12 @@ void MavrosPrimitive::waypointListCallback(const mavros::WaypointList::ConstPtr&
     }
 
     wpl->waypoints = msg->waypoints;
+
+    if(load_when_done) {
+
+        MavrosPrimitive mp;
+        mp.load_waypoints();
+    }
 }
 
 void MavrosPrimitive::arTagCallback(const geometry_msgs::PoseStamped::ConstPtr& msg) {
