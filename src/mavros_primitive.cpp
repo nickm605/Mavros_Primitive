@@ -2,18 +2,27 @@
 
 mavros::WaypointListPtr wpl = boost::make_shared<mavros::WaypointList>();
 gps current_gps;
+bool reachedLoiter;
+double lat_tolerance;
+double long_tolerance;
 
 static FILE* myfile;
 
 MavrosPrimitive::MavrosPrimitive()
 {    
-    //takeoff_client_ = nh_.serviceClient<mavros::CommandTOL>("/mavros/cmd/takeoff");
-    //land_client_ = nh_.serviceClient<mavros::CommandTOL>("/mavros/cmd/land");
+    waypoint_clear_client_ = nh_.serviceClient<mavros::WaypointPull>("/mavros/mission/clear");
     waypoint_pull_client_ = nh_.serviceClient<mavros::WaypointPull>("/mavros/mission/pull");
     waypoint_push_client_ = nh_.serviceClient<mavros::WaypointPush>("/mavros/mission/push");
-    current_gps.latitude = -1;
+    
+    current_gps.latitude = 37.212738;
+    current_gps.longitude = -80.438042;
 
-    myfile = fopen("example.txt", "wa");
+    reachedLoiter = false;
+
+    lat_tolderance = 0.00001;
+    long_tolderance = 0.00001;
+
+    myfile = fopen("flightLog.txt", "wa");
 }
 
 MavrosPrimitive::~MavrosPrimitive()
@@ -29,7 +38,7 @@ int main(int argc, char** argv)
 
     ros::Subscriber sub = n.subscribe("/mavros/mission/waypoints", 1000, MavrosPrimitive::waypointListCallback);
 
-    //ros::Subscriber sub2 = n.subscribe("/pose_stamped", 1000, MavrosPrimitive::arTagCallback);
+    ros::Subscriber sub2 = n.subscribe("/pose_stamped", 1000, MavrosPrimitive::arTagCallback);
 
     //spin separate thread
     pthread_t thread;
@@ -38,17 +47,6 @@ int main(int argc, char** argv)
     ros::spin();
 
     return 0;
-
-    //run obstacle avoidance with ros
-    /*
-    
-    ROS_INFO("Mavros Primitive starting...");
-
-    while (ros::ok())
-    {
-        mp.handleKeyboardInput(mp.getch());
-    }
-    */
 }
 
 void *MavrosPrimitive::runInSeparateThread(void*) {
@@ -63,119 +61,131 @@ void *MavrosPrimitive::runInSeparateThread(void*) {
     }
 }
 
-void MavrosPrimitive::waypointListCallback(const mavros::WaypointList::ConstPtr& msg) {
-
-    //std::ofstream myfile;
-    //myfile.open("example.txt", std::ios_base::app);
-    //myfile << msg->waypoints.size() << " waypoints\n";
-    fprintf(myfile, "\n\n%d waypoints\n", msg->waypoints.size());
-    //ROS_INFO("Received %d waypoints", msg->waypoints.size());
-
-    bool load_when_done = false;
-    if(wpl->waypoints.size() == 0) {
-
-        load_when_done = true;
-    }
-
-    for(int i = 0; i < msg->waypoints.size(); i++) {
-
-        fprintf(myfile, "Waypoint (%d) frame: %d command: %d is current: %d lat: %f long: %f\n", i, msg->waypoints[i].frame, msg->waypoints[i].command, msg->waypoints[i].is_current, msg->waypoints[i].x_lat,  msg->waypoints[i].y_long);
-
-/*
-        myfile << "Waypoint " << i << "  frame: " << std::string::to_string(msg->waypoints[i].frame);
-        myfile << "  command: " << std::string::to_string(msg->waypoints[i].command);
-        myfile << "  is_current: " << std::string::to_string(msg->waypoints[i].is_current);
-        myfile << "  lat: " << std::string::to_string(msg->waypoints[i].x_lat);
-        myfile << "  long: " << std::string::to_string(msg->waypoints[i].y_long) << "\n";
-*/
-        //ROS_INFO("Waypoint (%d) frame: %d command: %d is current: %d x_lat: %f", i, msg->waypoints[i].frame, msg->waypoints[i].command, msg->waypoints[i].is_current, msg->waypoints[i].x_lat);
-
-        if (msg->waypoints[i].is_current) {
-            current_gps.latitude = msg->waypoints[i].x_lat;
-            current_gps.longitude = msg->waypoints[i].y_long;
-        }
-    }
-
-    wpl->waypoints = msg->waypoints;
-
-    if(load_when_done) {
-
-        MavrosPrimitive mp;
-        mp.load_waypoints();
-    }
-}
-
-void MavrosPrimitive::arTagCallback(const geometry_msgs::PoseStamped::ConstPtr& msg) {
-    
-    // When do we stop? How do we wait?
-
-    ROS_INFO("Received x: %f y: %f", msg->pose.position.x, msg->pose.position.y);
-
-    if (wpl->waypoints.size() < 3) {
-
-        ROS_INFO("Waypoint list doesnt match expectation. Size: %d", wpl->waypoints.size());
-        return;
-    }
-
-    MavrosPrimitive mp;
-
-    mp.load_ar_tag_waypoint(msg->pose.position.x, msg->pose.position.y);
-}
-
 void MavrosPrimitive::get_waypoints()
 {
     // read waypoints from Pixhawk
     mavros::WaypointPull srv;
     //send
-    if(waypoint_pull_client_.call(srv))
-    {
-        ROS_INFO("Getting waypoints");
-        if(srv.response.success)
-        {
-            //ROS_INFO("Number of waypoints received: %d", srv.response.wp_received);
-        }
-    }
-    else
-    {
-        ROS_ERROR("Failed to get waypoints");
+    waypoint_pull_client_.call(srv)
+}
+
+void MavrosPrimitive::waypointListCallback(const mavros::WaypointList::ConstPtr& msg) {
+
+    fprintf(myfile, "\n\n%d waypoints\n", msg->waypoints.size());
+
+    for(int i = 0; i < msg->waypoints.size(); i++) {
+
+        fprintf(myfile, "Waypoint (%d) frame: %d command: %d is current: %d lat: %f long: %f\n", i, msg->waypoints[i].frame, msg->waypoints[i].command, msg->waypoints[i].is_current, msg->waypoints[i].x_lat,  msg->waypoints[i].y_long);
     }
 
+    if(wpl->waypoints.size() == 0) {
+
+        MavrosPrimitive mp;
+        //mp.clear_waypoints();
+        mp.load_initial_mission();
+        return;
+    }
+
+    if(wpl->waypoints[wpl->waypoints.size() - 1].is_current) {
+
+        reachedLoiter = true;
+    }
+}
+
+/*
+void MavrosPrimitive::clear_waypoints()
+{
+    // clear waypoints from Pixhawk
+    mavros::WaypointClear srv;
+    //send
+    waypoint_clear_client_.call(srv)
+}
+*/
+
+void MavrosPrimitive::load_intial_mission()
+{
+    mavros::WaypointPush srv;
+
+    //takeoff
+    mavros::Waypoint wp_takeoff;
+    wp_takeoff.z_alt = 15.0;
+    wp_takeoff.command = 22;
+    wp_takeoff.frame = 3;
+    wpl->waypoints.push_back(wp_takeoff);
+
+    //move to initial waypoint
+    mavros::Waypoint wp_neighborhood;
+    wp_neighborhood.x_lat = current_gps.latitude;
+    wp_neighborhood.y_long = current_gps.longitude;
+    wp_neighborhood.z_alt = 15.0;
+    wp_neighborhood.command = 16;
+    wp_neighborhood.frame = 3;
+    wpl->waypoints.push_back(wp_neighborhood);
+
+    //loiter unlimited
+    mavros::Waypoint wp_loiter;
+    wp_loiter.x_lat = current_gps.latitude;
+    wp_loiter.y_long = current_gps.longitude;
+    wp_loiter.z_alt = 15.0;
+    wp_loiter.command = 17;
+    wp_loiter.frame = 3;
+    wpl->waypoints.push_back(wp_loiter);
+
+    srv.request.waypoints = wpl->waypoints;
+
+    //send
+    waypoint_push_client_.call(srv);
+}
+
+void MavrosPrimitive::arTagCallback(const geometry_msgs::PoseStamped::ConstPtr& msg) {
+
+    ROS_INFO("Received x: %f y: %f", msg->pose.position.x, msg->pose.position.y);
+
+    if(reachedLoiter) {
+
+        reachedLoiter = false;
+        MavrosPrimitive mp;
+        mp.load_ar_tag_waypoint(msg->pose.position.x, msg->pose.position.y);
+    }
 }
 
 void MavrosPrimitive::load_ar_tag_waypoint(float x, float y)
 {
     mavros::WaypointPush srv;
 
-    if (current_gps.latitude == -1) {
-
-        ROS_INFO("Current GPS unknown");
-        return;
-    }
-
     gps new_gps = offsetToGPSWaypoint(x, y, current_gps, 0);
     ROS_INFO("New waypoint from ar tag calculation: Lat: %f Long: %f", new_gps.latitude, new_gps.longitude);
 
-    mavros::Waypoint wp;
-    wp.x_lat = new_gps.latitude;
-    wp.y_long = new_gps.longitude;
-    wp.z_alt = 15.0;
-    wp.command = 16;
-    wp.frame = 3;
-    wpl->waypoints.push_back(wp);
+    if(fabs(new_gps.latitude - current_gps.latitude) < lat_tolerance && fabs(new_gps.longitude - current_gps.longitude) < long_tolerance) {
+
+        MavrosPrimitive mp;
+        mp.load_end_of_mission();
+        return;
+    }
+
+    current_gps = new_gps;
+
+    //move to new waypoint
+    mavros::Waypoint wp_ar;
+    wp_ar.x_lat = current_gps.latitude;
+    wp_ar.y_long = current_gps.longitude;
+    wp_ar.z_alt = 15.0;
+    wp_ar.command = 16;
+    wp_ar.frame = 3;
+    wpl->waypoints.push_back(wp_ar);
+
+    //loiter unlimited
+    mavros::Waypoint wp_loiter;
+    wp_loiter.x_lat = current_gps.latitude;
+    wp_loiter.y_long = current_gps.longitude;
+    wp_loiter.z_alt = 15.0;
+    wp_loiter.command = 17;
+    wp_loiter.frame = 3;
+    wpl->waypoints.push_back(wp_loiter);
+
     srv.request.waypoints = wpl->waypoints;
     //send
-    if(waypoint_push_client_.call(srv))
-    {
-        ROS_INFO("Pushing with ar tag based waypoint");
-        if(srv.response.success)
-        {
-            ROS_INFO("Number of waypoints transferred: %d", srv.response.wp_transfered);
-        }
-    }
-    else
-    {
-        ROS_ERROR("Failed to push waypoints");
-    }
+    waypoint_push_client_.call(srv);
 }
 
 gps MavrosPrimitive::offsetToGPSWaypoint(double x, double y, gps current_gps, double yaw) {
@@ -198,7 +208,43 @@ gps MavrosPrimitive::offsetToGPSWaypoint(double x, double y, gps current_gps, do
     return gps_returned;
 }
 
+void MavrosPrimitive::load_end_of_mission()
+{
+    mavros::WaypointPush srv;
 
+    //land
+    mavros::Waypoint wp_land;
+    wp_land.x_lat = current_gps.latitude;
+    wp_land.y_long = current_gps.longitude;
+    wp_land.z_alt = 0.0;
+    wp_land.command = 21;
+    wp_land.frame = 3;
+    wpl->waypoints.push_back(wp_land);
+
+    //set servo
+
+    //takeoff
+    mavros::Waypoint wp_takeoff;
+    wp_takeoff.x_lat = current_gps.latitude;
+    wp_takeoff.y_long = current_gps.longitude;
+    wp_takeoff.z_alt = 15.0;
+    wp_takeoff.command = 22;
+    wp_takeoff.frame = 3;
+    wpl->waypoints.push_back(wp_takeoff);
+
+    //rtl
+    mavros::Waypoint wp_rtl;
+    wp_rtl.command = 20;
+    wp_rtl.frame = 3;
+    wpl->waypoints.push_back(wp_rtl);
+
+    srv.request.waypoints = wpl->waypoints;
+
+    //send
+    waypoint_push_client_.call(srv);
+}
+
+/*
 void MavrosPrimitive::load_waypoints()
 {
     if (wpl->waypoints.size() < 3) {
@@ -272,122 +318,6 @@ void MavrosPrimitive::load_waypoints()
     srv.request.waypoints = wpl->waypoints;
 
     //send
-    if(waypoint_push_client_.call(srv))
-    {
-        ROS_INFO("Pushing new waypoints");
-        if(srv.response.success)
-        {
-            ROS_INFO("Number of waypoints transferred: %d", srv.response.wp_transfered);
-        }
-    }
-    else
-    {
-        ROS_ERROR("Failed to push waypoints");
-    }
-}
-
-
-/*
-void MavrosPrimitive::handleKeyboardInput(int character)
-{
-    switch(character)
-    {
-    case 'w':
-        ROS_INFO("send take off");
-        takeOff();
-    break;
-    case 's':
-        ROS_INFO("send land");
-        land();
-    break;
-    case 'g':
-        ROS_INFO("Get waypoints");
-        get_waypoints();
-    break;
-    case 'l':
-        ROS_INFO("Load waypoints");
-        load_waypoints();
-    break;
-    }
+    waypoint_push_client_.call(srv);
 }
 */
-/*
-void MavrosPrimitive::takeOff()
-{
-    //build takeoff command ,,
-    //(NOTE) just using empty to demonstrate functionality
-    mavros::CommandTOL srv;    
-    srv.request.min_pitch = 0.1f;
-    srv.request.yaw = 0.1f;
-    srv.request.latitude = 0.1f;
-    srv.request.longitude= 0.1f;
-    srv.request.altitude = 0.1f;
-
-    //send
-    if(takeoff_client_.call(srv))
-    {
-        ROS_INFO("connected takeoff");
-        //check response of the service
-        //NOTE: Pixhawk may not be successful on start as you need to arm correctly before you takeoff?
-        if(srv.response.success)
-        {
-            ROS_INFO("Sent Takeoff %d", srv.response.result);
-        }
-    }
-    else
-    {
-        ROS_ERROR("Failed to send takeoff");
-    }
-
-}
-*/
-/*
-void MavrosPrimitive::land()
-{
-    //build land command
-    //(NOTE) just using empty to demonstrate functionality
-    mavros::CommandTOL srv;
-    srv.request.min_pitch = 0.1f;
-    srv.request.yaw = 0.1f;
-    srv.request.latitude = 0.1f;
-    srv.request.longitude= 0.1f;
-    srv.request.altitude = 0.1f;
-
-
-    //send
-    if(land_client_.call(srv))
-    {
-        ROS_INFO("connected land");
-        if(srv.response.success)
-        {
-            ROS_INFO("Sent Land %d", srv.response.result);
-        }
-    }
-    else
-    {
-        ROS_ERROR("Failed to send Land");
-    }
-
-}
-*/
-
-/*
-//read input with a non-blocking getchar from http://answers.ros.org/question/63491/keyboard-key-pressed/
-//linux specific?
-int MavrosPrimitive::getch()
-{
-    static struct termios oldt, newt;
-    tcgetattr( STDIN_FILENO, &oldt);           // save old settings
-    newt = oldt;
-    newt.c_lflag &= ~(ICANON);                 // disable buffering
-    tcsetattr( STDIN_FILENO, TCSANOW, &newt);  // apply new settings
-
-    int c = getchar();  // read character (non-blocking)
-
-    tcsetattr( STDIN_FILENO, TCSANOW, &oldt);  // restore old settings
-    return c;
-}
-*/
-
-
-
