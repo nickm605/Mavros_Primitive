@@ -19,8 +19,8 @@ MavrosPrimitive::MavrosPrimitive()
 
     reachedLoiter = false;
 
-    lat_tolderance = 0.00001;
-    long_tolderance = 0.00001;
+    lat_tolerance = 0.00001;
+    long_tolerance = 0.00001;
 
     myfile = fopen("flightLog.txt", "wa");
 }
@@ -51,12 +51,10 @@ int main(int argc, char** argv)
 
 void *MavrosPrimitive::runInSeparateThread(void*) {
 
-    MavrosPrimitive mp;
-    mp.load_waypoints();
-
     while(true) {
 
         sleep(1);
+	MavrosPrimitive mp;
         mp.get_waypoints();
     }
 }
@@ -66,7 +64,7 @@ void MavrosPrimitive::get_waypoints()
     // read waypoints from Pixhawk
     mavros::WaypointPull srv;
     //send
-    waypoint_pull_client_.call(srv)
+    waypoint_pull_client_.call(srv);
 }
 
 void MavrosPrimitive::waypointListCallback(const mavros::WaypointList::ConstPtr& msg) {
@@ -102,7 +100,7 @@ void MavrosPrimitive::clear_waypoints()
 }
 */
 
-void MavrosPrimitive::load_intial_mission()
+void MavrosPrimitive::load_initial_mission()
 {
     mavros::WaypointPush srv;
 
@@ -141,12 +139,12 @@ void MavrosPrimitive::arTagCallback(const geometry_msgs::PoseStamped::ConstPtr& 
 
     ROS_INFO("Received x: %f y: %f", msg->pose.position.x, msg->pose.position.y);
 
-    if(reachedLoiter) {
+    //if(reachedLoiter) {
 
         reachedLoiter = false;
         MavrosPrimitive mp;
         mp.load_ar_tag_waypoint(msg->pose.position.x, msg->pose.position.y);
-    }
+    //}
 }
 
 void MavrosPrimitive::load_ar_tag_waypoint(float x, float y)
