@@ -25,11 +25,11 @@ struct gps {
 
 /**
  * Demonstration of onboard control with the Odroid U3 and Pixhawk
- *
- * Utilizes Ros services to relay commands to autopilot
+ * Utilizes ROS services to relay commands to autopilot
+ * Loads initial mission and updates position based on AR tags
  *
  * Brian Wright 2-2-15
- * Nicholas Montgomeryt 4-13-15
+ * Nicholas Montgomery 4-13-15
  */
 
 class MavrosPrimitive

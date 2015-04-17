@@ -54,7 +54,7 @@ void *MavrosPrimitive::runInSeparateThread(void*) {
     while(true) {
 
         sleep(1);
-	MavrosPrimitive mp;
+        MavrosPrimitive mp;
         mp.get_waypoints();
     }
 }
@@ -63,7 +63,6 @@ void MavrosPrimitive::get_waypoints()
 {
     // read waypoints from Pixhawk
     mavros::WaypointPull srv;
-    //send
     waypoint_pull_client_.call(srv);
 }
 
@@ -106,6 +105,11 @@ void MavrosPrimitive::load_initial_mission()
 
     //home
     mavros::Waypoint wp_home;
+    wp_home.x_lat = current_gps.latitude;
+    wp_home.y_long = current_gps.longitude;
+    wp_home.z_alt = 10.0;
+    wp_home.command = 16;
+    wp_home.frame = 3;
     wpl->waypoints.push_back(wp_home);
 
     //takeoff
@@ -160,7 +164,8 @@ void MavrosPrimitive::load_ar_tag_waypoint(float x, float y)
     mavros::WaypointPush srv;
 
     gps new_gps = offsetToGPSWaypoint(x, y, current_gps, 0);
-    ROS_INFO("New waypoint from ar tag calculation: Lat: %0.8f Long: %0.8f", new_gps.latitude, new_gps.longitude);
+    ROS_INFO("New waypoint from AR tag calculation: Lat: %0.8f Long: %0.8f", new_gps.latitude, new_gps.longitude);
+    fprintf(myfile, "New waypoint from AR tag calculation: Lat: %0.8f Long: %0.8f", new_gps.latitude, new_gps.longitude);
 
     if(fabs(new_gps.latitude - current_gps.latitude) < lat_tolerance && fabs(new_gps.longitude - current_gps.longitude) < long_tolerance) {
 
@@ -225,6 +230,8 @@ gps MavrosPrimitive::offsetToGPSWaypoint(double x, double y, gps current_gps, do
 
 void MavrosPrimitive::load_end_of_mission()
 {
+    fprintf(myfile, "\n----------------------\nLoading end of mission\n----------------------\n");
+
     mavros::WaypointPush srv;
 
     //home
@@ -268,80 +275,3 @@ void MavrosPrimitive::load_end_of_mission()
     waypoint_push_client_.call(srv);
 }
 
-/*
-void MavrosPrimitive::load_waypoints()
-{
-    if (wpl->waypoints.size() < 3) {
-
-        ROS_INFO("Waypoint list doesn't match expectation. Size: %d", wpl->waypoints.size());
-        return;
-    }
-
-    mavros::WaypointPush srv;
-
-    //move east
-    mavros::Waypoint wp_east;
-    wp_east.x_lat = wpl->waypoints[2].x_lat;
-    wp_east.y_long = wpl->waypoints[2].y_long + 0.0001;
-    wp_east.z_alt = 15.0;
-    wp_east.command = 16;
-    wp_east.frame = 3;
-    wpl->waypoints.push_back(wp_east);
-
-    //move south
-    mavros::Waypoint wp_south;
-    wp_south.x_lat = wpl->waypoints[2].x_lat - 0.0001;
-    wp_south.y_long = wpl->waypoints[2].y_long + 0.0001;
-    wp_south.z_alt = 15.0;
-    wp_south.command = 16;
-    wp_south.frame = 3;
-    wpl->waypoints.push_back(wp_south);
-
-    //move west
-    mavros::Waypoint wp_west;
-    wp_west.x_lat = wpl->waypoints[2].x_lat - 0.0001;
-    wp_west.y_long = wpl->waypoints[2].y_long;
-    wp_west.z_alt = 15.0;
-    wp_west.command = 16;
-    wp_west.frame = 3;
-    wpl->waypoints.push_back(wp_west);
-
-    //move north
-    mavros::Waypoint wp_north;
-    wp_north.x_lat = wpl->waypoints[2].x_lat;
-    wp_north.y_long = wpl->waypoints[2].y_long;
-    wp_north.z_alt = 15.0;
-    wp_north.command = 16;
-    wp_north.frame = 3;
-    wpl->waypoints.push_back(wp_north);
-
-    //land
-    mavros::Waypoint wp_land;
-    wp_land.x_lat = wpl->waypoints[6].x_lat;
-    wp_land.y_long = wpl->waypoints[6].y_long;
-    wp_land.z_alt = 0.0;
-    wp_land.command = 21;
-    wp_land.frame = 3;
-    wpl->waypoints.push_back(wp_land);
-
-    //takeoff
-    mavros::Waypoint wp_takeoff;
-    wp_takeoff.x_lat = wpl->waypoints[6].x_lat;
-    wp_takeoff.y_long = wpl->waypoints[6].y_long;
-    wp_takeoff.z_alt = 15.0;
-    wp_takeoff.command = 22;
-    wp_takeoff.frame = 3;
-    wpl->waypoints.push_back(wp_takeoff);
-
-    //rtl
-    mavros::Waypoint wp_rtl;
-    wp_rtl.command = 20;
-    wp_rtl.frame = 3;
-    wpl->waypoints.push_back(wp_rtl);
-
-    srv.request.waypoints = wpl->waypoints;
-
-    //send
-    waypoint_push_client_.call(srv);
-}
-*/
