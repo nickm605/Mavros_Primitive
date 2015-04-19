@@ -8,21 +8,13 @@ double long_tolerance;
 
 static FILE* myfile;
 
+bool first_call;
+
 MavrosPrimitive::MavrosPrimitive()
 {    
-    waypoint_clear_client_ = nh_.serviceClient<mavros::WaypointPull>("/mavros/mission/clear");
+    //waypoint_clear_client_ = nh_.serviceClient<mavros::WaypointPull>("/mavros/mission/clear");
     waypoint_pull_client_ = nh_.serviceClient<mavros::WaypointPull>("/mavros/mission/pull");
     waypoint_push_client_ = nh_.serviceClient<mavros::WaypointPush>("/mavros/mission/push");
-    
-    current_gps.latitude = 37.212738;
-    current_gps.longitude = -80.438042;
-
-    reachedLoiter = false;
-
-    lat_tolerance = 0.000001;
-    long_tolerance = 0.000001;
-
-    myfile = fopen("/home/odroid/catkin_ws/src/ar_track_alvar/ar_track_alvar/flight_log.txt", "a");
 }
 
 MavrosPrimitive::~MavrosPrimitive()
@@ -32,7 +24,29 @@ MavrosPrimitive::~MavrosPrimitive()
 
 int main(int argc, char** argv)
 {
+    std::string fileID;
+    if(argc == 4) {
+        std::string s(argv[1]);
+        fileID = s;
+    }
+    else {
+        fileID = "default";
+    }
+    std::string fileLocation = "/home/odroid/catkin_ws/src/ar_track_alvar/ar_track_alvar/flight_log-" + fileID + ".txt";
+
     ros::init(argc, argv, "mavros_primitive_node");
+     
+    current_gps.latitude = 37.212738;
+    current_gps.longitude = -80.438042;
+
+    reachedLoiter = false;
+
+    first_call = true;
+
+    lat_tolerance = 0.000001;
+    long_tolerance = 0.000001;
+
+    myfile = fopen(fileLocation.c_str(), "a");
 
     ros::NodeHandle n;
 
@@ -74,17 +88,17 @@ void MavrosPrimitive::waypointListCallback(const mavros::WaypointList::ConstPtr&
 
         fprintf(myfile, "Waypoint (%d) frame: %d command: %d is current: %d lat: %f long: %f\n", i, msg->waypoints[i].frame, msg->waypoints[i].command, msg->waypoints[i].is_current, msg->waypoints[i].x_lat,  msg->waypoints[i].y_long);
     }
+    
+    if(first_call) {
 
-    if(wpl->waypoints.size() == 0) {
-
+        first_call = false;
         MavrosPrimitive mp;
-        //mp.clear_waypoints();
         mp.load_initial_mission();
-        return;
     }
 
     if(wpl->waypoints[wpl->waypoints.size() - 1].is_current) {
 
+	fprintf(myfile, "Reached loiter");
         reachedLoiter = true;
     }
 }
@@ -101,6 +115,10 @@ void MavrosPrimitive::clear_waypoints()
 
 void MavrosPrimitive::load_initial_mission()
 {
+    wpl->waypoints.clear();
+
+    fprintf(myfile, "\n\n----------------------\nLoading initial mission\n----------------------\n\n");
+
     mavros::WaypointPush srv;
 
     //home
@@ -165,7 +183,7 @@ void MavrosPrimitive::load_ar_tag_waypoint(float x, float y)
 
     gps new_gps = offsetToGPSWaypoint(x, y, current_gps, 0);
     ROS_INFO("New waypoint from AR tag calculation: Lat: %0.8f Long: %0.8f", new_gps.latitude, new_gps.longitude);
-    fprintf(myfile, "New waypoint from AR tag calculation: Lat: %0.8f Long: %0.8f", new_gps.latitude, new_gps.longitude);
+    fprintf(myfile, "\nNew waypoint from AR tag calculation: Lat: %0.8f Long: %0.8f", new_gps.latitude, new_gps.longitude);
 
     if(fabs(new_gps.latitude - current_gps.latitude) < lat_tolerance && fabs(new_gps.longitude - current_gps.longitude) < long_tolerance) {
 
@@ -230,7 +248,7 @@ gps MavrosPrimitive::offsetToGPSWaypoint(double x, double y, gps current_gps, do
 
 void MavrosPrimitive::load_end_of_mission()
 {
-    fprintf(myfile, "\n----------------------\nLoading end of mission\n----------------------\n");
+    fprintf(myfile, "\n\n----------------------\nLoading end of mission\n----------------------\n");
 
     mavros::WaypointPush srv;
 
