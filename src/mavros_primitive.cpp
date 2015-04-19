@@ -46,7 +46,7 @@ int main(int argc, char** argv)
     lat_tolerance = 0.000001;
     long_tolerance = 0.000001;
 
-    myfile = fopen(fileLocation.c_str(), "a");
+    myfile = fopen(fileLocation.c_str(), "w");
 
     ros::NodeHandle n;
 
