@@ -6,6 +6,8 @@ bool reachedLoiter;
 double lat_tolerance;
 double long_tolerance;
 
+double testAltitude;
+
 static FILE* myfile;
 
 bool first_call;
@@ -45,6 +47,8 @@ int main(int argc, char** argv)
 
     lat_tolerance = 0.000001;
     long_tolerance = 0.000001;
+
+    testAltitude = 6.0;
 
     myfile = fopen(fileLocation.c_str(), "w");
 
@@ -96,9 +100,9 @@ void MavrosPrimitive::waypointListCallback(const mavros::WaypointList::ConstPtr&
         mp.load_initial_mission();
     }
 
-    if(wpl->waypoints[wpl->waypoints.size() - 1].is_current) {
+    if(msg->waypoints[msg->waypoints.size() - 1].is_current) {
 
-	fprintf(myfile, "Reached loiter");
+	fprintf(myfile, "\n--------------\nReached loiter\n--------------\n");
         reachedLoiter = true;
     }
 }
@@ -125,7 +129,7 @@ void MavrosPrimitive::load_initial_mission()
     mavros::Waypoint wp_home;
     wp_home.x_lat = current_gps.latitude;
     wp_home.y_long = current_gps.longitude;
-    wp_home.z_alt = 10.0;
+    wp_home.z_alt = testAltitude;
     wp_home.command = 16;
     wp_home.frame = 3;
     wpl->waypoints.push_back(wp_home);
@@ -134,7 +138,7 @@ void MavrosPrimitive::load_initial_mission()
     mavros::Waypoint wp_takeoff;
     wp_takeoff.x_lat = current_gps.latitude;
     wp_takeoff.y_long = current_gps.longitude;
-    wp_takeoff.z_alt = 10.0;
+    wp_takeoff.z_alt = testAltitude;
     wp_takeoff.command = 22;
     wp_takeoff.frame = 3;
     wpl->waypoints.push_back(wp_takeoff);
@@ -143,7 +147,7 @@ void MavrosPrimitive::load_initial_mission()
     mavros::Waypoint wp_neighborhood;
     wp_neighborhood.x_lat = current_gps.latitude;
     wp_neighborhood.y_long = current_gps.longitude;
-    wp_neighborhood.z_alt = 10.0;
+    wp_neighborhood.z_alt = testAltitude;
     wp_neighborhood.command = 16;
     wp_neighborhood.frame = 3;
     wpl->waypoints.push_back(wp_neighborhood);
@@ -152,7 +156,7 @@ void MavrosPrimitive::load_initial_mission()
     mavros::Waypoint wp_loiter;
     wp_loiter.x_lat = current_gps.latitude;
     wp_loiter.y_long = current_gps.longitude;
-    wp_loiter.z_alt = 10.0;
+    wp_loiter.z_alt = testAltitude;
     wp_loiter.command = 17;
     wp_loiter.frame = 3;
     wpl->waypoints.push_back(wp_loiter);
@@ -198,7 +202,7 @@ void MavrosPrimitive::load_ar_tag_waypoint(float x, float y)
     mavros::Waypoint wp_home;
     wp_home.x_lat = current_gps.latitude;
     wp_home.y_long = current_gps.longitude;
-    wp_home.z_alt = 10.0;
+    wp_home.z_alt = testAltitude;
     wp_home.command = 16;
     wp_home.frame = 3;
     wpl->waypoints.push_back(wp_home);
@@ -207,7 +211,7 @@ void MavrosPrimitive::load_ar_tag_waypoint(float x, float y)
     mavros::Waypoint wp_ar;
     wp_ar.x_lat = current_gps.latitude;
     wp_ar.y_long = current_gps.longitude;
-    wp_ar.z_alt = 10.0;
+    wp_ar.z_alt = testAltitude;
     wp_ar.command = 16;
     wp_ar.frame = 3;
     wpl->waypoints.push_back(wp_ar);
@@ -216,7 +220,7 @@ void MavrosPrimitive::load_ar_tag_waypoint(float x, float y)
     mavros::Waypoint wp_loiter;
     wp_loiter.x_lat = current_gps.latitude;
     wp_loiter.y_long = current_gps.longitude;
-    wp_loiter.z_alt = 10.0;
+    wp_loiter.z_alt = testAltitude;
     wp_loiter.command = 17;
     wp_loiter.frame = 3;
     wpl->waypoints.push_back(wp_loiter);
@@ -256,7 +260,7 @@ void MavrosPrimitive::load_end_of_mission()
     mavros::Waypoint wp_home;
     wp_home.x_lat = current_gps.latitude;
     wp_home.y_long = current_gps.longitude;
-    wp_home.z_alt = 10.0;
+    wp_home.z_alt = testAltitude;
     wp_home.command = 16;
     wp_home.frame = 3;
     wpl->waypoints.push_back(wp_home);
@@ -276,7 +280,7 @@ void MavrosPrimitive::load_end_of_mission()
     mavros::Waypoint wp_takeoff;
     wp_takeoff.x_lat = current_gps.latitude;
     wp_takeoff.y_long = current_gps.longitude;
-    wp_takeoff.z_alt = 10.0;
+    wp_takeoff.z_alt = testAltitude;
     wp_takeoff.command = 22;
     wp_takeoff.frame = 3;
     wpl->waypoints.push_back(wp_takeoff);
