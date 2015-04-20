@@ -100,9 +100,9 @@ void MavrosPrimitive::waypointListCallback(const mavros::WaypointList::ConstPtr&
         mp.load_initial_mission();
     }
 
-    if(msg->waypoints[msg->waypoints.size() - 1].is_current) {
+    if(!reachedLoiter && msg->waypoints[msg->waypoints.size() - 1].is_current) {
 
-	fprintf(myfile, "\n--------------\nReached loiter\n--------------\n");
+	    fprintf(myfile, "\n--------------\nReached loiter\n--------------\n");
         reachedLoiter = true;
     }
 }
@@ -182,7 +182,7 @@ void MavrosPrimitive::arTagCallback(const geometry_msgs::PoseStamped::ConstPtr& 
 
 void MavrosPrimitive::load_ar_tag_waypoint(float x, float y)
 {
-    wpl->waypoints.clear();
+    //wpl->waypoints.clear();
     mavros::WaypointPush srv;
 
     gps new_gps = offsetToGPSWaypoint(x, y, current_gps, 0);
