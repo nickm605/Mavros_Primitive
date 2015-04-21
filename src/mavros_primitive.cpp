@@ -100,10 +100,13 @@ void MavrosPrimitive::waypointListCallback(const mavros::WaypointList::ConstPtr&
         mp.load_initial_mission();
     }
 
-    if(!reachedLoiter && msg->waypoints[msg->waypoints.size() - 1].is_current) {
+    if(!reachedLoiter) {
+        if(msg->waypoints[msg->waypoints.size() - 1].is_current &&
+	   msg->waypoints[msg->waypoints.size() - 1].command == 17) {
 
 	    fprintf(myfile, "\n--------------\nReached loiter\n--------------\n");
-        reachedLoiter = true;
+            reachedLoiter = true;
+        }
     }
 }
 
