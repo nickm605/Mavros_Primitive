@@ -204,7 +204,8 @@ void MavrosPrimitive::arTagCallback(const geometry_msgs::PoseStamped::ConstPtr& 
 
 void MavrosPrimitive::load_ar_tag_waypoint(float x, float y)
 {
-    gps new_gps = offsetToGPSWaypoint(x, y, current_gps, 0);
+    float invert_y = -1 * y;
+    gps new_gps = offsetToGPSWaypoint(x, invert_y, current_gps, 0);
     ROS_INFO("New waypoint from AR tag calculation: Lat: %0.8f Long: %0.8f", new_gps.latitude, new_gps.longitude);
     fprintf(myfile, "\nNew waypoint from AR tag calculation: Lat: %0.8f Long: %0.8f", new_gps.latitude, new_gps.longitude);
 
