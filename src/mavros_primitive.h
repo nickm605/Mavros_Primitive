@@ -7,10 +7,11 @@
 #include <math.h>
 #include <mavros/CommandTOL.h>
 #include <mavros/Waypoint.h>
-#include <mavros/WaypointClear.h>
+//#include <mavros/WaypointClear.h>
 #include <mavros/WaypointPull.h>
 #include <mavros/WaypointPush.h>
 #include <mavros/WaypointList.h>
+#include <mavros/WaypointSetCurrent.h>
 #include <geometry_msgs/PoseStamped.h>
 #include "std_msgs/String.h"
 #include <pthread.h>
@@ -51,11 +52,10 @@ public:
 
 private:
     ros::NodeHandle nh_;
-    ros::ServiceClient waypoint_clear_client_;
+    //ros::ServiceClient waypoint_clear_client_;
     ros::ServiceClient waypoint_pull_client_;
     ros::ServiceClient waypoint_push_client_;
-
-    
+    ros::ServiceClient waypoint_set_current_client_;
 };
 
 #endif //MAVROS_PRIMITIVE

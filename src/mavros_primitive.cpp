@@ -17,6 +17,7 @@ MavrosPrimitive::MavrosPrimitive()
     //waypoint_clear_client_ = nh_.serviceClient<mavros::WaypointPull>("/mavros/mission/clear");
     waypoint_pull_client_ = nh_.serviceClient<mavros::WaypointPull>("/mavros/mission/pull");
     waypoint_push_client_ = nh_.serviceClient<mavros::WaypointPush>("/mavros/mission/push");
+    waypoint_set_current_client_ = nh_.serviceClient<mavros::WaypointSetCurrent>("/mavros/mission/set_current");
 }
 
 MavrosPrimitive::~MavrosPrimitive()
@@ -185,9 +186,6 @@ void MavrosPrimitive::arTagCallback(const geometry_msgs::PoseStamped::ConstPtr& 
 
 void MavrosPrimitive::load_ar_tag_waypoint(float x, float y)
 {
-    //wpl->waypoints.clear();
-    mavros::WaypointPush srv;
-
     gps new_gps = offsetToGPSWaypoint(x, y, current_gps, 0);
     ROS_INFO("New waypoint from AR tag calculation: Lat: %0.8f Long: %0.8f", new_gps.latitude, new_gps.longitude);
     fprintf(myfile, "\nNew waypoint from AR tag calculation: Lat: %0.8f Long: %0.8f", new_gps.latitude, new_gps.longitude);
@@ -199,8 +197,11 @@ void MavrosPrimitive::load_ar_tag_waypoint(float x, float y)
         return;
     }
 
+    uint16 index = wpl->waypoints.size();
+
     current_gps = new_gps;
 
+    /*
     //home
     mavros::Waypoint wp_home;
     wp_home.x_lat = current_gps.latitude;
@@ -209,6 +210,7 @@ void MavrosPrimitive::load_ar_tag_waypoint(float x, float y)
     wp_home.command = 16;
     wp_home.frame = 3;
     wpl->waypoints.push_back(wp_home);
+    */
 
     //move to new waypoint
     mavros::Waypoint wp_ar;
@@ -228,9 +230,15 @@ void MavrosPrimitive::load_ar_tag_waypoint(float x, float y)
     wp_loiter.frame = 3;
     wpl->waypoints.push_back(wp_loiter);
 
-    srv.request.waypoints = wpl->waypoints;
-    //send
-    waypoint_push_client_.call(srv);
+    // Push waypoint list
+    mavros::WaypointPush push_srv;
+    push_srv.request.waypoints = wpl->waypoints;
+    waypoint_push_client_.call(push_srv);
+
+    // Go to new mission item
+    mavros::WaypointSetCurrent set_current_srv;
+    set_current_srv.request.wp_seq = index;
+    waypoint_set_current_client_.call(set_current_srv);
 }
 
 gps MavrosPrimitive::offsetToGPSWaypoint(double x, double y, gps current_gps, double yaw) {
@@ -257,8 +265,9 @@ void MavrosPrimitive::load_end_of_mission()
 {
     fprintf(myfile, "\n\n----------------------\nLoading end of mission\n----------------------\n");
 
-    mavros::WaypointPush srv;
+    uint16 index = wpl->waypoints.size();
 
+    /*
     //home
     mavros::Waypoint wp_home;
     wp_home.x_lat = current_gps.latitude;
@@ -267,6 +276,7 @@ void MavrosPrimitive::load_end_of_mission()
     wp_home.command = 16;
     wp_home.frame = 3;
     wpl->waypoints.push_back(wp_home);
+    */
 
     //land
     mavros::Waypoint wp_land;
@@ -294,9 +304,14 @@ void MavrosPrimitive::load_end_of_mission()
     wp_rtl.frame = 3;
     wpl->waypoints.push_back(wp_rtl);
 
-    srv.request.waypoints = wpl->waypoints;
+    // Push new waypoint list
+    mavros::WaypointPush push_srv;
+    push_srv.request.waypoints = wpl->waypoints;
+    waypoint_push_client_.call(push_srv);
 
-    //send
-    waypoint_push_client_.call(srv);
+    // Go to new mission item
+    mavros::WaypointSetCurrent set_current_srv;
+    set_current_srv.request.wp_seq = index;
+    waypoint_set_current_client_.call(set_current_srv);
 }
 
