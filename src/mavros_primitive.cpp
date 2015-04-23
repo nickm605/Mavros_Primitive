@@ -111,6 +111,7 @@ void MavrosPrimitive::waypointListCallback(const mavros::WaypointList::ConstPtr&
 
         second_call = false;
         third_call = true;
+        return;
     }
 
     if(third_call) {
