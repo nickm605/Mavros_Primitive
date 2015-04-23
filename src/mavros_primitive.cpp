@@ -197,7 +197,7 @@ void MavrosPrimitive::load_ar_tag_waypoint(float x, float y)
         return;
     }
 
-    uint16 index = wpl->waypoints.size();
+    uint16_t index = wpl->waypoints.size();
 
     current_gps = new_gps;
 
@@ -265,7 +265,7 @@ void MavrosPrimitive::load_end_of_mission()
 {
     fprintf(myfile, "\n\n----------------------\nLoading end of mission\n----------------------\n");
 
-    uint16 index = wpl->waypoints.size();
+    uint16_t index = wpl->waypoints.size();
 
     /*
     //home
