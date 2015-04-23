@@ -44,6 +44,7 @@ public:
     //void clear_waypoints();
     void get_waypoints();
     void load_initial_mission();
+    void set_waypoint();
     void load_ar_tag_waypoint(float x, float y);
     gps offsetToGPSWaypoint(double x, double y, gps current_gps, double yaw);
     void load_end_of_mission();

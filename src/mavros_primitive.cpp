@@ -11,6 +11,7 @@ double testAltitude;
 static FILE* myfile;
 
 bool first_call;
+bool second_call;
 
 MavrosPrimitive::MavrosPrimitive()
 {    
@@ -45,6 +46,7 @@ int main(int argc, char** argv)
     reachedLoiter = false;
 
     first_call = true;
+    second_call = false;
 
     lat_tolerance = 0.000001;
     long_tolerance = 0.000001;
@@ -97,23 +99,17 @@ void MavrosPrimitive::waypointListCallback(const mavros::WaypointList::ConstPtr&
     if(first_call) {
 
         first_call = false;
+        second_call = true;
         MavrosPrimitive mp;
         mp.load_initial_mission();
         return;
     }
 
-    // Go to new mission item
-    mavros::WaypointSetCurrent set_current_srv;
-    set_current_srv.request.wp_seq = 2;
-    if(waypoint_set_current_client_.call(set_current_srv)) {
+    if(second_call) {
 
-        if(!set_current_srv.response.success) {
-
-            ROS_ERROR("FAILED");
-        }
-        else {
-            ROS_ERROR("Success");
-        }
+        second_call = false;
+        MavrosPrimitive mp;
+        mp.set_waypoint();
     }
 
     if(!reachedLoiter) {
@@ -181,6 +177,24 @@ void MavrosPrimitive::load_initial_mission()
     mavros::WaypointPush push_srv;
     push_srv.request.waypoints = wpl->waypoints;
     waypoint_push_client_.call(push_srv);
+}
+
+void MavrosPrimitive::set_waypoint()
+{
+
+    // Go to new mission item
+    mavros::WaypointSetCurrent set_current_srv;
+    set_current_srv.request.wp_seq = 2;
+    if(waypoint_set_current_client_.call(set_current_srv)) {
+
+        if(!set_current_srv.response.success) {
+
+            ROS_ERROR("FAILED");
+        }
+        else {
+            ROS_ERROR("Success");
+        }
+    }
 }
 
 void MavrosPrimitive::arTagCallback(const geometry_msgs::PoseStamped::ConstPtr& msg) {
