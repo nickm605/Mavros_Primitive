@@ -11,8 +11,6 @@ double testAltitude;
 static FILE* myfile;
 
 bool first_call;
-bool second_call;
-bool third_call;
 
 MavrosPrimitive::MavrosPrimitive()
 {    
@@ -47,8 +45,6 @@ int main(int argc, char** argv)
     reachedLoiter = false;
 
     first_call = true;
-    second_call = false;
-    third_call = false;
 
     lat_tolerance = 0.000001;
     long_tolerance = 0.000001;
@@ -101,24 +97,9 @@ void MavrosPrimitive::waypointListCallback(const mavros::WaypointList::ConstPtr&
     if(first_call) {
 
         first_call = false;
-        second_call = true;
         MavrosPrimitive mp;
         mp.load_initial_mission();
         return;
-    }
-
-    if(second_call) {
-
-        second_call = false;
-        third_call = true;
-        return;
-    }
-
-    if(third_call) {
-
-        third_call = false;
-        MavrosPrimitive mp;
-        mp.set_waypoint();
     }
 
     if(!reachedLoiter) {
@@ -188,6 +169,7 @@ void MavrosPrimitive::load_initial_mission()
     waypoint_push_client_.call(push_srv);
 }
 
+/*
 void MavrosPrimitive::set_waypoint()
 {
 
@@ -205,6 +187,7 @@ void MavrosPrimitive::set_waypoint()
         }
     }
 }
+*/
 
 void MavrosPrimitive::arTagCallback(const geometry_msgs::PoseStamped::ConstPtr& msg) {
 
