@@ -102,6 +102,20 @@ void MavrosPrimitive::waypointListCallback(const mavros::WaypointList::ConstPtr&
         return;
     }
 
+    // Go to new mission item
+    mavros::WaypointSetCurrent set_current_srv;
+    set_current_srv.request.wp_seq = 2;
+    if(waypoint_set_current_client_.call(set_current_srv)) {
+
+        if(!set_current_srv.response.success) {
+
+            ROS_ERROR("FAILED");
+        }
+        else {
+            ROS_ERROR("Success");
+        }
+    }
+
     if(!reachedLoiter) {
         if(msg->waypoints[msg->waypoints.size() - 1].is_current &&
 	   msg->waypoints[msg->waypoints.size() - 1].command == 17) {
@@ -167,17 +181,6 @@ void MavrosPrimitive::load_initial_mission()
     mavros::WaypointPush push_srv;
     push_srv.request.waypoints = wpl->waypoints;
     waypoint_push_client_.call(push_srv);
-
-    // Go to new mission item
-    mavros::WaypointSetCurrent set_current_srv;
-    set_current_srv.request.wp_seq = 2;
-    if(waypoint_set_current_client_.call(set_current_srv)) {
-
-        if(!set_current_srv.response.success) {
-
-            ROS_ERROR("FAILED");
-        }
-    }
 }
 
 void MavrosPrimitive::arTagCallback(const geometry_msgs::PoseStamped::ConstPtr& msg) {
