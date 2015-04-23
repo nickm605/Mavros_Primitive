@@ -12,6 +12,7 @@ static FILE* myfile;
 
 bool first_call;
 bool second_call;
+bool third_call;
 
 MavrosPrimitive::MavrosPrimitive()
 {    
@@ -47,6 +48,7 @@ int main(int argc, char** argv)
 
     first_call = true;
     second_call = false;
+    third_call = false;
 
     lat_tolerance = 0.000001;
     long_tolerance = 0.000001;
@@ -108,6 +110,12 @@ void MavrosPrimitive::waypointListCallback(const mavros::WaypointList::ConstPtr&
     if(second_call) {
 
         second_call = false;
+        third_call = true;
+    }
+
+    if(third_call) {
+
+        third_call = false;
         MavrosPrimitive mp;
         mp.set_waypoint();
     }
