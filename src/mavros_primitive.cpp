@@ -127,8 +127,6 @@ void MavrosPrimitive::load_initial_mission()
 
     fprintf(myfile, "\n\n----------------------\nLoading initial mission\n----------------------\n\n");
 
-    mavros::WaypointPush srv;
-
     //home
     mavros::Waypoint wp_home;
     wp_home.x_lat = current_gps.latitude;
@@ -165,10 +163,14 @@ void MavrosPrimitive::load_initial_mission()
     wp_loiter.frame = 3;
     wpl->waypoints.push_back(wp_loiter);
 
-    srv.request.waypoints = wpl->waypoints;
+    mavros::WaypointPush push_srv;
+    push_srv.request.waypoints = wpl->waypoints;
+    waypoint_push_client_.call(push_srv);
 
-    //send
-    waypoint_push_client_.call(srv);
+    // Go to new mission item
+    mavros::WaypointSetCurrent set_current_srv;
+    set_current_srv.request.wp_seq = 2;
+    waypoint_set_current_client_.call(set_current_srv);
 }
 
 void MavrosPrimitive::arTagCallback(const geometry_msgs::PoseStamped::ConstPtr& msg) {
