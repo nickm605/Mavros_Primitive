@@ -46,10 +46,10 @@ int main(int argc, char** argv)
 
     first_call = true;
 
-    x_tolerance = 0.05;
-    y_tolerance = 0.05;
+    x_tolerance = 0.1;
+    y_tolerance = 0.1;
 
-    testAltitude = 6.0;
+    testAltitude = 10.0;
 
     myfile = fopen(fileLocation.c_str(), "w");
 
