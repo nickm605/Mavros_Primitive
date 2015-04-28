@@ -3,8 +3,8 @@
 mavros::WaypointListPtr wpl = boost::make_shared<mavros::WaypointList>();
 gps current_gps;
 bool reachedLoiter;
-double lat_tolerance;
-double long_tolerance;
+double x_tolerance;
+double y_tolerance;
 
 double testAltitude;
 
@@ -46,8 +46,8 @@ int main(int argc, char** argv)
 
     first_call = true;
 
-    lat_tolerance = 0.000001;
-    long_tolerance = 0.000001;
+    x_tolerance = 0.05;
+    y_tolerance = 0.05;
 
     testAltitude = 6.0;
 
@@ -204,17 +204,17 @@ void MavrosPrimitive::arTagCallback(const geometry_msgs::PoseStamped::ConstPtr& 
 
 void MavrosPrimitive::load_ar_tag_waypoint(float x, float y)
 {
-    float invert_y = -1 * y;
-    gps new_gps = offsetToGPSWaypoint(x, invert_y, current_gps, 0);
-    ROS_INFO("New waypoint from AR tag calculation: Lat: %0.8f Long: %0.8f", new_gps.latitude, new_gps.longitude);
-    fprintf(myfile, "\nNew waypoint from AR tag calculation: Lat: %0.8f Long: %0.8f", new_gps.latitude, new_gps.longitude);
-
-    if(fabs(new_gps.latitude - current_gps.latitude) < lat_tolerance && fabs(new_gps.longitude - current_gps.longitude) < long_tolerance) {
+    if(fabs(x) < x_tolerance && fabs(y) < y_tolerance) {
 
         MavrosPrimitive mp;
         mp.load_end_of_mission();
         return;
     }
+
+    float invert_y = -1 * y;
+    gps new_gps = offsetToGPSWaypoint(x, invert_y, current_gps, 0);
+    ROS_INFO("New waypoint from AR tag calculation: Lat: %0.8f Long: %0.8f", new_gps.latitude, new_gps.longitude);
+    fprintf(myfile, "\nNew waypoint from AR tag calculation: Lat: %0.8f Long: %0.8f", new_gps.latitude, new_gps.longitude);
 
     uint16_t index = wpl->waypoints.size();
 
