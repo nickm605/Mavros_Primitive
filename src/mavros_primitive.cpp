@@ -220,17 +220,6 @@ void MavrosPrimitive::load_ar_tag_waypoint(float x, float y)
 
     current_gps = new_gps;
 
-    /*
-    //home
-    mavros::Waypoint wp_home;
-    wp_home.x_lat = current_gps.latitude;
-    wp_home.y_long = current_gps.longitude;
-    wp_home.z_alt = testAltitude;
-    wp_home.command = 16;
-    wp_home.frame = 3;
-    wpl->waypoints.push_back(wp_home);
-    */
-
     //move to new waypoint
     mavros::Waypoint wp_ar;
     wp_ar.x_lat = current_gps.latitude;
@@ -286,17 +275,6 @@ void MavrosPrimitive::load_end_of_mission()
 
     uint16_t index = wpl->waypoints.size();
 
-    /*
-    //home
-    mavros::Waypoint wp_home;
-    wp_home.x_lat = current_gps.latitude;
-    wp_home.y_long = current_gps.longitude;
-    wp_home.z_alt = testAltitude;
-    wp_home.command = 16;
-    wp_home.frame = 3;
-    wpl->waypoints.push_back(wp_home);
-    */
-
     //land
     mavros::Waypoint wp_land;
     wp_land.x_lat = current_gps.latitude;
@@ -307,6 +285,14 @@ void MavrosPrimitive::load_end_of_mission()
     wpl->waypoints.push_back(wp_land);
 
     //set servo
+    mavros::Waypoint wp_servo;
+    wp_servo.param1 = 9;
+    wp_servo.param2 = 1315;
+    wp_servo.param3 = 2;
+    wp_servo.param4 = 0;
+    wp_servo.command = 184;
+    wp_servo.frame = 3;
+    wpl->waypoints.push_back(wp_servo);
 
     //takeoff
     mavros::Waypoint wp_takeoff;
