@@ -287,7 +287,7 @@ void MavrosPrimitive::load_end_of_mission()
     //set servo
     mavros::Waypoint wp_servo;
     wp_servo.param1 = 9;
-    wp_servo.param2 = 1315;
+    wp_servo.param2 = 650;
     wp_servo.param3 = 2;
     wp_servo.param4 = 0;
     wp_servo.command = 184;
