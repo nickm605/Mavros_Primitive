@@ -46,8 +46,8 @@ int main(int argc, char** argv)
 
     first_call = true;
 
-    x_tolerance = 0.1;
-    y_tolerance = 0.1;
+    x_tolerance = 0.2;
+    y_tolerance = 0.2;
 
     testAltitude = 10.0;
 
@@ -259,8 +259,8 @@ gps MavrosPrimitive::offsetToGPSWaypoint(double x, double y, gps current_gps, do
     double lon_adjustment_raw = cos(yaw)*x + sin(yaw)*y;
     double lat_adjustment_raw = -1*sin(yaw)*x + cos(yaw)*y;
 
-    double lon_adjustment = 0.75 * lon_adjustment_raw / longitude_length;
-    double lat_adjustment = 0.75 * lat_adjustment_raw / latitude_length;
+    double lon_adjustment = 0.6 * lon_adjustment_raw / longitude_length;
+    double lat_adjustment = 0.6 * lat_adjustment_raw / latitude_length;
 
     gps gps_returned;
     gps_returned.longitude = current_gps.longitude + lon_adjustment;
