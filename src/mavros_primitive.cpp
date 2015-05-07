@@ -3,6 +3,8 @@
 mavros::WaypointListPtr wpl = boost::make_shared<mavros::WaypointList>();
 gps current_gps;
 bool reachedLoiter;
+int loiterSeconds;
+
 double x_tolerance;
 double y_tolerance;
 
@@ -14,7 +16,6 @@ bool first_call;
 
 MavrosPrimitive::MavrosPrimitive()
 {    
-    //waypoint_clear_client_ = nh_.serviceClient<mavros::WaypointPull>("/mavros/mission/clear");
     waypoint_pull_client_ = nh_.serviceClient<mavros::WaypointPull>("/mavros/mission/pull");
     waypoint_push_client_ = nh_.serviceClient<mavros::WaypointPush>("/mavros/mission/push");
     waypoint_set_current_client_ = nh_.serviceClient<mavros::WaypointSetCurrent>("/mavros/mission/set_current");
@@ -43,6 +44,7 @@ int main(int argc, char** argv)
     current_gps.longitude = -80.438042;
 
     reachedLoiter = false;
+    loiterSeconds = 0;
 
     first_call = true;
 
@@ -104,23 +106,23 @@ void MavrosPrimitive::waypointListCallback(const mavros::WaypointList::ConstPtr&
 
     if(!reachedLoiter) {
         if(msg->waypoints[msg->waypoints.size() - 1].is_current &&
-	   msg->waypoints[msg->waypoints.size() - 1].command == 17) {
+	       msg->waypoints[msg->waypoints.size() - 1].command == 17) {
 
-	    fprintf(myfile, "\n--------------\nReached loiter\n--------------\n");
+            loiterSeconds++;
+        }
+        else {
+
+            loiterSeconds = 0;
+        }
+
+        if(loiterSeconds >= 3) {
+
+            fprintf(myfile, "\n--------------\nReached loiter\n--------------\n");
             reachedLoiter = true;
+            loiterSeconds = 0;
         }
     }
 }
-
-/*
-void MavrosPrimitive::clear_waypoints()
-{
-    // clear waypoints from Pixhawk
-    mavros::WaypointClear srv;
-    //send
-    waypoint_clear_client_.call(srv)
-}
-*/
 
 void MavrosPrimitive::load_initial_mission()
 {
@@ -168,26 +170,6 @@ void MavrosPrimitive::load_initial_mission()
     push_srv.request.waypoints = wpl->waypoints;
     waypoint_push_client_.call(push_srv);
 }
-
-/*
-void MavrosPrimitive::set_waypoint()
-{
-
-    // Go to new mission item
-    mavros::WaypointSetCurrent set_current_srv;
-    set_current_srv.request.wp_seq = 2;
-    if(waypoint_set_current_client_.call(set_current_srv)) {
-
-        if(!set_current_srv.response.success) {
-
-            ROS_ERROR("FAILED");
-        }
-        else {
-            ROS_ERROR("Success");
-        }
-    }
-}
-*/
 
 void MavrosPrimitive::arTagCallback(const geometry_msgs::PoseStamped::ConstPtr& msg) {
 

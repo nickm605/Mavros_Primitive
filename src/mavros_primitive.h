@@ -7,7 +7,6 @@
 #include <math.h>
 #include <mavros/CommandTOL.h>
 #include <mavros/Waypoint.h>
-//#include <mavros/WaypointClear.h>
 #include <mavros/WaypointPull.h>
 #include <mavros/WaypointPush.h>
 #include <mavros/WaypointList.h>
@@ -41,7 +40,6 @@ public:
 
     static void waypointListCallback(const mavros::WaypointList::ConstPtr& msg);
     static void arTagCallback(const  geometry_msgs::PoseStamped::ConstPtr& msg);
-    //void clear_waypoints();
     void get_waypoints();
     void load_initial_mission();
     void set_waypoint();
@@ -53,7 +51,6 @@ public:
 
 private:
     ros::NodeHandle nh_;
-    //ros::ServiceClient waypoint_clear_client_;
     ros::ServiceClient waypoint_pull_client_;
     ros::ServiceClient waypoint_push_client_;
     ros::ServiceClient waypoint_set_current_client_;
