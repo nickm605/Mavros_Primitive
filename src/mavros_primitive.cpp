@@ -1,6 +1,9 @@
 #include "mavros_primitive.h"
 
+// Initialize empty waypoint list (to fill on callback)
 mavros::WaypointListPtr wpl = boost::make_shared<mavros::WaypointList>();
+
+// Stores the current GPS as it changes in flight
 gps current_gps;
 bool reachedLoiter;
 int loiterSeconds;
@@ -8,7 +11,9 @@ int loiterSeconds;
 double x_tolerance;
 double y_tolerance;
 
-double testAltitude;
+double altitude;
+
+bool stage_two;
 
 static FILE* myfile;
 
@@ -48,10 +53,12 @@ int main(int argc, char** argv)
 
     first_call = true;
 
-    x_tolerance = 0.2;
-    y_tolerance = 0.2;
+    x_tolerance = 0.25;
+    y_tolerance = 0.25;
 
-    testAltitude = 10.0;
+    altitude = 10.0;
+
+    stage_two = false;
 
     myfile = fopen(fileLocation.c_str(), "w");
 
@@ -134,7 +141,7 @@ void MavrosPrimitive::load_initial_mission()
     mavros::Waypoint wp_home;
     wp_home.x_lat = current_gps.latitude;
     wp_home.y_long = current_gps.longitude;
-    wp_home.z_alt = testAltitude;
+    wp_home.z_alt = altitude;
     wp_home.command = 16;
     wp_home.frame = 3;
     wpl->waypoints.push_back(wp_home);
@@ -143,7 +150,7 @@ void MavrosPrimitive::load_initial_mission()
     mavros::Waypoint wp_takeoff;
     wp_takeoff.x_lat = current_gps.latitude;
     wp_takeoff.y_long = current_gps.longitude;
-    wp_takeoff.z_alt = testAltitude;
+    wp_takeoff.z_alt = altitude;
     wp_takeoff.command = 22;
     wp_takeoff.frame = 3;
     wpl->waypoints.push_back(wp_takeoff);
@@ -152,7 +159,7 @@ void MavrosPrimitive::load_initial_mission()
     mavros::Waypoint wp_neighborhood;
     wp_neighborhood.x_lat = current_gps.latitude;
     wp_neighborhood.y_long = current_gps.longitude;
-    wp_neighborhood.z_alt = testAltitude;
+    wp_neighborhood.z_alt = altitude;
     wp_neighborhood.command = 16;
     wp_neighborhood.frame = 3;
     wpl->waypoints.push_back(wp_neighborhood);
@@ -161,7 +168,7 @@ void MavrosPrimitive::load_initial_mission()
     mavros::Waypoint wp_loiter;
     wp_loiter.x_lat = current_gps.latitude;
     wp_loiter.y_long = current_gps.longitude;
-    wp_loiter.z_alt = testAltitude;
+    wp_loiter.z_alt = altitude;
     wp_loiter.command = 17;
     wp_loiter.frame = 3;
     wpl->waypoints.push_back(wp_loiter);
@@ -188,9 +195,19 @@ void MavrosPrimitive::load_ar_tag_waypoint(float x, float y)
 {
     if(fabs(x) < x_tolerance && fabs(y) < y_tolerance) {
 
-        MavrosPrimitive mp;
-        mp.load_end_of_mission();
-        return;
+        if(!stage_two) {
+
+            stage_two = true;
+            x_tolerance = 0.1;
+            y_tolerance = 0.1;
+            altitude = 5.0;
+        }
+        else {
+
+            MavrosPrimitive mp;
+            mp.load_end_of_mission();
+            return;
+        }
     }
 
     float invert_y = -1 * y;
@@ -206,7 +223,7 @@ void MavrosPrimitive::load_ar_tag_waypoint(float x, float y)
     mavros::Waypoint wp_ar;
     wp_ar.x_lat = current_gps.latitude;
     wp_ar.y_long = current_gps.longitude;
-    wp_ar.z_alt = testAltitude;
+    wp_ar.z_alt = altitude;
     wp_ar.command = 16;
     wp_ar.frame = 3;
     wpl->waypoints.push_back(wp_ar);
@@ -215,7 +232,7 @@ void MavrosPrimitive::load_ar_tag_waypoint(float x, float y)
     mavros::Waypoint wp_loiter;
     wp_loiter.x_lat = current_gps.latitude;
     wp_loiter.y_long = current_gps.longitude;
-    wp_loiter.z_alt = testAltitude;
+    wp_loiter.z_alt = altitude;
     wp_loiter.command = 17;
     wp_loiter.frame = 3;
     wpl->waypoints.push_back(wp_loiter);
@@ -241,8 +258,8 @@ gps MavrosPrimitive::offsetToGPSWaypoint(double x, double y, gps current_gps, do
     double lon_adjustment_raw = cos(yaw)*x + sin(yaw)*y;
     double lat_adjustment_raw = -1*sin(yaw)*x + cos(yaw)*y;
 
-    double lon_adjustment = 0.6 * lon_adjustment_raw / longitude_length;
-    double lat_adjustment = 0.6 * lat_adjustment_raw / latitude_length;
+    double lon_adjustment = 0.5 * lon_adjustment_raw / longitude_length;
+    double lat_adjustment = 0.5 * lat_adjustment_raw / latitude_length;
 
     gps gps_returned;
     gps_returned.longitude = current_gps.longitude + lon_adjustment;
@@ -280,7 +297,7 @@ void MavrosPrimitive::load_end_of_mission()
     mavros::Waypoint wp_takeoff;
     wp_takeoff.x_lat = current_gps.latitude;
     wp_takeoff.y_long = current_gps.longitude;
-    wp_takeoff.z_alt = testAltitude;
+    wp_takeoff.z_alt = altitude;
     wp_takeoff.command = 22;
     wp_takeoff.frame = 3;
     wpl->waypoints.push_back(wp_takeoff);
