@@ -3,18 +3,21 @@
 // Initialize empty waypoint list (to fill on callback)
 mavros::WaypointListPtr wpl = boost::make_shared<mavros::WaypointList>();
 
-// Stores the current GPS as it changes in flight
+// Stoes the current GPS as it changes in flight
 gps current_gps;
 
 // Tracks if the vehicle has stabilized in a loiter position
 bool reachedLoiter;
 int loiterSeconds;
 
-// Tolerance for AR tag offset to progress to next stage / land
+// Tolerance for AR tag offset to progress to next stage / lond
 double ar_tolerance;
 
 // Flight altitude
 double altitude;
+
+// Increment to adjust for each AR tag
+double increment;
 
 // Tracks whether the algorithm is in stage two (decreased altitude)
 bool stage_two;
@@ -26,7 +29,7 @@ static FILE* myfile;
 bool first_call;
 
 /*
- * MavrosPrimitive constructor
+ * MavrosPrimitive Constructor
  */
 MavrosPrimitive::MavrosPrimitive()
 {    
@@ -46,7 +49,7 @@ MavrosPrimitive::~MavrosPrimitive()
  */
 int main(int argc, char** argv)
 {
-    // Read the unique file name from the launch parameters, if given
+    // Read the unique filename from the launch parameters, if given
     std::string fileID;
     if(argc == 4) {
         std::string s(argv[1]);
@@ -60,20 +63,22 @@ int main(int argc, char** argv)
 
     // Initialize the ROS node
     ros::init(argc, argv, "mavros_primitive_node");
-    
+     
     // Set the initial GPS to start searching
-    current_gps.latitude = 37.212738;
-    current_gps.longitude = -80.438042;
+    current_gps.latitude = 37.1021963;
+    current_gps.longitude = -76.3873581;
 
-    // Initialize flgiht parameters
+    // Initialize the flight parameters
     reachedLoiter = false;
     loiterSeconds = 0;
 
     first_call = true;
 
-    ar_tolerance = 0.3;
+    ar_tolerance = 0.5;
 
     altitude = 10.0;
+
+    increment = 0.6;
 
     stage_two = false;
 
@@ -87,7 +92,7 @@ int main(int argc, char** argv)
 
     ros::Subscriber sub2 = n.subscribe("/pose_stamped", 1000, MavrosPrimitive::arTagCallback);
 
-    // Spin separate thread for one second updates
+    // Spin separate thread for one-second updates
     pthread_t thread;
     pthread_create(&thread, NULL, &MavrosPrimitive::runInSeparateThread, NULL);
 
@@ -147,7 +152,7 @@ void MavrosPrimitive::waypointListCallback(const mavros::WaypointList::ConstPtr&
 
         // If the current command is to loiter unlimited, increase the count of seconds loitering
         if(msg->waypoints[msg->waypoints.size() - 1].is_current &&
-	       msg->waypoints[msg->waypoints.size() - 1].command == 17) {
+           msg->waypoints[msg->waypoints.size() - 1].command == 17) {
 
             loiterSeconds++;
         }
@@ -168,7 +173,7 @@ void MavrosPrimitive::waypointListCallback(const mavros::WaypointList::ConstPtr&
 }
 
 /*
- * Loads the initial mission to takeoff, go to inital waypoint, and loiter unlimited
+ * Loads the initial mission to takeoff, go to initial waypoint, and loiter unlimited
  */
 void MavrosPrimitive::load_initial_mission()
 {
@@ -249,8 +254,9 @@ void MavrosPrimitive::load_ar_tag_waypoint(float x, float y)
         if(!stage_two) {
 
             stage_two = true;
-            ar_tolerance = 0.15;
-            altitude = 5.0;
+            ar_tolerance = 0.3;
+            altitude = 6.0;
+	    increment = 0.3;
         }
         // Otherwise, trigger end of mission
         else {
@@ -303,7 +309,14 @@ void MavrosPrimitive::load_ar_tag_waypoint(float x, float y)
     // Go to new mission item
     mavros::WaypointSetCurrent set_current_srv;
     set_current_srv.request.wp_seq = index;
-    waypoint_set_current_client_.call(set_current_srv);
+    if(waypoint_set_current_client_.call(set_current_srv)) {
+
+        fprintf(myfile, "\n--------------\nSUCCESS UPDATING MISSION ITEM\n--------------\n");
+    }
+    else {
+
+        fprintf(myfile, "\n--------------\nFAILED TO UPDATE MISSION ITEM\n--------------\n");
+    }
 }
 
 /*
@@ -321,11 +334,11 @@ gps MavrosPrimitive::offsetToGPSWaypoint(double x, double y, gps current_gps, do
     double lon_adjustment_raw = cos(yaw)*x + sin(yaw)*y;
     double lat_adjustment_raw = -1*sin(yaw)*x + cos(yaw)*y;
 
-    // Calculate adjustment as 0.5 increment
-    double lon_adjustment = 0.5 * lon_adjustment_raw / longitude_length;
-    double lat_adjustment = 0.5 * lat_adjustment_raw / latitude_length;
+    // Calculate adjustment based on given increment
+    double lon_adjustment = increment * lon_adjustment_raw / longitude_length;
+    double lat_adjustment = increment * lat_adjustment_raw / latitude_length;
 
-    // Create a new GPS coordinate reference to the current_gps
+    // Create a new GPS coordinate referenced to the current_gps
     gps gps_returned;
     gps_returned.longitude = current_gps.longitude + lon_adjustment;
     gps_returned.latitude = current_gps.latitude + lat_adjustment;
@@ -386,4 +399,3 @@ void MavrosPrimitive::load_end_of_mission()
     set_current_srv.request.wp_seq = index;
     waypoint_set_current_client_.call(set_current_srv);
 }
-
